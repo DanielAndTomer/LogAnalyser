@@ -2,11 +2,6 @@ import re
 import csv
 import os
 import time
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib import rc
-rc('mathtext', default='regular')
-
 
 def find_between( s, first, last ):
     try:
@@ -30,22 +25,31 @@ def clear_between( s, first, last ):
 
 def reformLine(s):
     s=clear_between(s,"[DEBUG] "," ")
-    s=clear_between(s,",","Response [")
-    s=s.replace("getChannel0RSSI=",",")
-    s=s.replace(", getChannel1RSSI=",",")
-    s=s.replace(", getChannel0CINR=",",")
-    s=s.replace(", getChannel1CINR=",",")
-    s=s.replace("]","")
-    return s
+    time=find_between(s,""," ")
+    soc=find_between(s,"c=",",")
+    soh=find_between(s,"h=",",")
+    packVolt=find_between(s,"packVolt=",",")
+    l=[time,soc,soh,packVolt]
+    cells=find_between(s,"cellsVolts=[","]")
+    cells=cells.split(",")
+    l.extend(cells)
+    for i in range(0,6):
+        cells[i]=int(cells[i])
+    diff=max(cells)-min(cells)
+    l.append(diff)
+    temp=find_between(s,"temperature=",",")
+    l.append(temp)
+    return l
+
 
 if __name__ == "__main__":
 
     folderName=input("Insert the folder name:\n")
     logsList=os.listdir(folderName)
     
-    cf = open('csvRSSI.csv','w')
+    cf = open('csvBMS.csv','w')
     wr = csv.writer(cf, dialect='excel',lineterminator='\n')
-    cf.write("Time, RSSI 1, RSSI 2, CINR 1, CINR 2\n")
+    cf.write("Time, SOC, SOH, Pack Volt, s1, s2, s3, s4 ,s5 ,s6, Difference, Temp.\n")
 
     print("------\n"+
         "In progress !\n"+
@@ -67,12 +71,9 @@ if __name__ == "__main__":
         
         for line in contant:
             #deals each line in log file
-            if "NODE 192.168.131.242: MobilicomGetRssiCinrResponse" in line:
+            if "ARM message arrived ArmMessage [bmsMessage=BMSPeriodicMessage" in line:
                 csvline=reformLine(line)
-                l=re.split(",",csvline)
-                for i in range (1,5):
-                    l[i]=int(l[i])/2   
-                wr.writerow(l)
+                wr.writerow(csvline)
                 csvcounter+=1
                 
         datacounter+=len(contant)
