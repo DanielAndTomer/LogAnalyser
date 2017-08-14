@@ -8,6 +8,11 @@ import time
 import glob, xlwt
 import pandas as pd
 #import xlsxwriter
+import tkinter
+from tkinter import filedialog
+import os
+
+
 
 #rc('mathtext', default='regular')
 
@@ -158,6 +163,14 @@ if __name__ == "__main__":
           "It took " + str(round(dur,2)) +
           " sec to complete the task\n"+
           "------\n")
+
+##    root = tkinter.Tk()
+##    root.withdraw() #use to hide tkinter window
+##    currdir = os.getcwd()
+##    tempdir = filedialog.askdirectory(parent=root, initialdir=currdir, title='Please select a directory')
+##    if len(tempdir) > 0:
+##        print ("You chose " + tempdir)
+
     time.sleep(2)
 ##    print("Starting to plot the data\n"
 ##          "its going to take few seconds\n"
