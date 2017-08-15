@@ -13,7 +13,6 @@ from tkinter import filedialog
 import os
 
 
-
 #rc('mathtext', default='regular')
 
 
@@ -50,13 +49,21 @@ def reformRSSI(s):
         l[i]=int(l[i])/2   
     return l
 
-def reformWind(s):
-    s=clear_between(s,"[DEBUG] "," ")
-    time=find_between(s,"",",")
-    wind=find_between(s,"Wind speed average ",",")
-    gust=find_between(s,"momentary gust ",s.strip()[-1])
-    l=[time,wind,gust]
-    return l
+def reformWind(s,t):
+    if t=="raw":
+        s=clear_between(s,"[DEBUG] "," ")
+        time=find_between(s,"",",")
+        wind=find_between(s,"windSpeed=",",")
+        l=[time,wind]
+        return l
+    else:
+        s=clear_between(s,"[DEBUG] "," ")
+        time=find_between(s,"",",")
+        wind=find_between(s,"Wind speed average ",",")
+        gust=find_between(s,"momentary gust ",s.strip()[-1])
+        l=[time,wind,gust]
+        return l
+
 
 def reformBMS(s):
     s=clear_between(s,"[DEBUG] "," ")
@@ -80,6 +87,16 @@ def reformBMS(s):
 
 if __name__ == "__main__":
 
+    print("Welcome!!!\n"
+          "-------\n")
+
+##    root = tkinter.Tk()
+##    root.withdraw() #use to hide tkinter window
+##    currdir = os.getcwd()
+##    tempdir = filedialog.askdirectory(parent=root, initialdir=currdir, title='Please select a directory')
+##    if len(tempdir) > 0:
+##        print ("You chose " + tempdir)
+    
     folderName=input("Insert the folder name:\n")
     logsList=os.listdir(folderName)
     
@@ -89,10 +106,15 @@ if __name__ == "__main__":
     rssi_wr = csv.writer(csvRSSI, dialect='excel',lineterminator='\n')
     csvRSSI.write("Time, RSSI 1, RSSI 2, CINR 1, CINR 2\n")
 
-    #Metrology csv file
-    csvMetrology = open('Metrology.csv','w')
-    wr_metrology = csv.writer(csvMetrology, dialect='excel',lineterminator='\n')
-    csvMetrology.write("Time, Wind, Gust\n")
+    #AvgWind csv file
+    csvAvgWind = open('Average Wind.csv','w')
+    wr_avgwind = csv.writer(csvAvgWind, dialect='excel',lineterminator='\n')
+    csvAvgWind.write("Time, Wind, Gust\n")
+
+    #rawWind csv file
+    csvRawWind = open('Raw Wind.csv','w')
+    wr_rawwind = csv.writer(csvRawWind, dialect='excel',lineterminator='\n')
+    csvRawWind.write("Time, Wind, Gust\n")
 
     #BMS csv file
     csvBMS = open('BMS.csv','w')
@@ -125,8 +147,12 @@ if __name__ == "__main__":
                 rssi_wr.writerow(csvline)
                 csvcounter+=1
             elif "Wind speed average" in line:
-                csvline=reformWind(line)
-                wr_metrology.writerow(csvline)
+                csvline=reformWind(line,"avg")
+                wr_avgwind.writerow(csvline)
+                csvcounter+=1
+            elif "Message arrived Meteorology [mastId" in line:
+                csvline=reformWind(line,"raw")
+                wr_rawwind.writerow(csvline)
                 csvcounter+=1
             elif "ARM message arrived ArmMessage [bmsMessage=BMSPeriodicMessage" in line:
                 csvline=reformBMS(line)
@@ -137,7 +163,8 @@ if __name__ == "__main__":
         f.close()
 
     csvRSSI.close()    
-    csvMetrology.close()
+    csvAvgWind.close()
+    csvRawWind.close()
     csvBMS.close()
 
 
@@ -164,13 +191,7 @@ if __name__ == "__main__":
           " sec to complete the task\n"+
           "------\n")
 
-##    root = tkinter.Tk()
-##    root.withdraw() #use to hide tkinter window
-##    currdir = os.getcwd()
-##    tempdir = filedialog.askdirectory(parent=root, initialdir=currdir, title='Please select a directory')
-##    if len(tempdir) > 0:
-##        print ("You chose " + tempdir)
-
+    
     time.sleep(2)
 ##    print("Starting to plot the data\n"
 ##          "its going to take few seconds\n"
