@@ -7,11 +7,15 @@ import time
 #from matplotlib import rc
 import glob, xlwt
 import pandas as pd
-#import xlsxwriter
+import xlsxwriter
 import tkinter
 from tkinter import filedialog
 import os
-
+import openpyxl
+from openpyxl import load_workbook
+#from openpyxl import formatting, styles
+from openpyxl.styles import PatternFill, Font
+from openpyxl.formatting.rule import ColorScaleRule, CellIsRule, FormulaRule
 
 #rc('mathtext', default='regular')
 
@@ -38,15 +42,13 @@ def clear_between( s, first, last ):
 
 def reformRSSI(s):
     s=clear_between(s,"[DEBUG] "," ")
-    s=clear_between(s,",","Response [")
-    s=s.replace("getChannel0RSSI=",",")
-    s=s.replace(", getChannel1RSSI=",",")
-    s=s.replace(", getChannel0CINR=",",")
-    s=s.replace(", getChannel1CINR=",",")
-    s=s.replace("]","")
-    l=re.split(",",s)
-    for i in range (1,5):
-        l[i]=int(l[i])/2   
+    time=find_between(s,"",",")
+    rssi1=int(find_between(s,"0RSSI=",","))/2
+    rssi2=int(find_between(s,"1RSSI=",","))/2
+    cinr1=int(find_between(s,"0CINR=",","))/2
+    cinr2=int(find_between(s,"1CINR=",","))/2
+    uptime=find_between(s,"Uptime=",",")
+    l=[time,rssi1,rssi2,cinr1,cinr2,uptime]
     return l
 
 def reformWind(s,t):
@@ -88,7 +90,7 @@ def reformBMS(s):
 if __name__ == "__main__":
 
     print("Welcome!!!\n"
-          "-------\n")
+          "-------")
 
 ##    root = tkinter.Tk()
 ##    root.withdraw() #use to hide tkinter window
@@ -104,7 +106,7 @@ if __name__ == "__main__":
     #RSSI/CINR csv file
     csvRSSI = open('Mobilicom.csv','w')
     rssi_wr = csv.writer(csvRSSI, dialect='excel',lineterminator='\n')
-    csvRSSI.write("Time, RSSI 1, RSSI 2, CINR 1, CINR 2\n")
+    csvRSSI.write("Time, RSSI 1, RSSI 2, CINR 1, CINR 2, Up Time\n")
 
     #AvgWind csv file
     csvAvgWind = open('Average Wind.csv','w')
@@ -142,7 +144,7 @@ if __name__ == "__main__":
         
         for line in contant:
             #deals each line in log file
-            if "NODE 192.168.131.242: MobilicomGetRssiCinrResponse" in line:
+            if "2: MobilicomGetSystemStatusResponse" in line:
                 csvline=reformRSSI(line)
                 rssi_wr.writerow(csvline)
                 csvcounter+=1
@@ -167,6 +169,23 @@ if __name__ == "__main__":
     csvRawWind.close()
     csvBMS.close()
 
+    dur=time.time()-startAll
+    print("------\n"+
+          "Data collection is DONE!\n"+
+          str(len(logsList))+
+          " files was imported\n"+
+          "witch contains "+
+          str(datacounter)+
+          " lines, \n"+
+          str(csvcounter)+
+          " lines has parsed\n"+
+          "It took " + str(round(dur,2)) +
+          " sec to complete the task\n"+
+          "------\n"
+          "Marging CSV files into on Excel Workbook\n"
+          "Please Wait!\n"
+          "------")
+
 
     writer = pd.ExcelWriter('Graphs.xlsx')
     for filename in glob.glob("*.csv"):
@@ -177,21 +196,52 @@ if __name__ == "__main__":
         os.remove(filename)
     writer.save()
 
-    dur=time.time()-startAll
-    print("------\n"+
-          "DONE!\n"+
-          str(len(logsList))+
-          " files was imported\n"+
-          "witch contains "+
-          str(datacounter)+
-          " lines, \n"+
-          str(csvcounter)+
-          " lines has parsed\n"+
-          "It took " + str(round(dur,2)) +
-          " sec to complete the task\n"+
-          "------\n")
+    print("Graphs.xlsx has been created!\n"+
+          "Restyling the data sheets\n"+
+          "Please Wait!\n"+
+          "------")
+
+    wb = load_workbook('Graphs.xlsx')
+    wsBMS=wb["BMS"]
+    wsMob=wb["Mobilicom"]
+
+    green_fill = PatternFill(start_color='8BC34A', end_color='8BC34A', fill_type='solid')
+    orange_fill = PatternFill(start_color='FFC107', end_color='FFC107', fill_type='solid')
+    red_fill = PatternFill(start_color='F44336', end_color='F44336', fill_type='solid')
+    white_fill = PatternFill(start_color='ffffff', end_color='ffffff', fill_type='solid')
+    white_font = Font(bold=True, color='ffffff')
+    
+    bms_rules = [CellIsRule(operator='between', formula=['0','100'], stopIfTrue=True, fill=green_fill),
+                 CellIsRule(operator='between', formula=['100','200'], stopIfTrue=True, fill=orange_fill),
+                 CellIsRule(operator='greaterThan', formula=['100'], stopIfTrue=True, fill=red_fill, font=white_font)]
+
+    for rule in bms_rules:
+        wsBMS.conditional_formatting.add('L:L',rule)
+
+    rssi_rules = [CellIsRule(operator='between', formula=['-80','-90'], stopIfTrue=True, fill=orange_fill),
+                  CellIsRule(operator='lessThan', formula=['-90'], stopIfTrue=True, fill=red_fill, font=white_font)]
+
+    for rule in rssi_rules:
+        wsMob.conditional_formatting.add('C:D'.format(wsMob.max_row),rule)
+
+    cinr_rules = [CellIsRule(operator='between', formula=['6.1','7'], stopIfTrue=True, fill=orange_fill),
+                  CellIsRule(operator='lessThan', formula=['6.1','-2'], stopIfTrue=True, fill=red_fill, font=white_font)]
+
+    for rule in cinr_rules:
+        wsMob.conditional_formatting.add('E:F',rule)
 
     
+        
+    wb.save("Graphs.xlsx")
+
+    dur=time.time()-startAll
+    print( "ALL DONE!!!\n"+
+          "File name is:  Graphs.xlsx\n"+
+          "All the process took " + str(round(dur,2))+
+          "sec\n"
+          "------\n")
+   
+      
     time.sleep(2)
 ##    print("Starting to plot the data\n"
 ##          "its going to take few seconds\n"

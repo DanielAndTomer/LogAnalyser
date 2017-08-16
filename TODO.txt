@@ -1,2 +1,8 @@
 WIND SPEED:
 [DEBUG] 2017-08-15 07:40:20,608 [ListenerWorkerMeteoDistributor-0-1] utils.serial.listeners.DistributionWorker.run(39) - Message arrived Meteorology [mastId=81, lastUpdated=07:40:20, windSpeed=4.64, windDirection=319, precipitationRate=0.000, pressure=1006.8, humidity=72.30, temperature=28.50, dewPoint=23.00]
+
+mobilicom uptime:
+Parsed message from NODE 192.168.131.242: MobilicomGetSystemStatusResponse
+
+????? ????? ? RSSI/CINR
+???? ?? ???
