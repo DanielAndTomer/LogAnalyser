@@ -92,34 +92,37 @@ if __name__ == "__main__":
     print("Welcome!!!\n"
           "-------")
 
-##    root = tkinter.Tk()
-##    root.withdraw() #use to hide tkinter window
-##    currdir = os.getcwd()
-##    tempdir = filedialog.askdirectory(parent=root, initialdir=currdir, title='Please select a directory')
-##    if len(tempdir) > 0:
-##        print ("You chose " + tempdir)
+    root = tkinter.Tk()
+    root.withdraw() #use to hide tkinter window
+    currdir = os.getcwd()
+    logsdir = filedialog.askdirectory(parent=root, initialdir=currdir, title='Please select a directory')
+    if len(logsdir) > 0:
+        print ("You chose " + logsdir)
     
-    folderName=input("Insert the folder name:\n")
+    folderName=logsdir
     logsList=os.listdir(folderName)
+    outdir = logsdir+"/LogAnalyser Output"
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
     
     #Files creation:
     #RSSI/CINR csv file
-    csvRSSI = open('Mobilicom.csv','w')
+    csvRSSI = open(outdir+'/Mobilicom.csv','w')
     rssi_wr = csv.writer(csvRSSI, dialect='excel',lineterminator='\n')
     csvRSSI.write("Time, RSSI 1, RSSI 2, CINR 1, CINR 2, Up Time\n")
 
     #AvgWind csv file
-    csvAvgWind = open('Average Wind.csv','w')
+    csvAvgWind = open(outdir+'/Average Wind.csv','w')
     wr_avgwind = csv.writer(csvAvgWind, dialect='excel',lineterminator='\n')
     csvAvgWind.write("Time, Wind, Gust\n")
 
     #rawWind csv file
-    csvRawWind = open('Raw Wind.csv','w')
+    csvRawWind = open(outdir+'/Raw Wind.csv','w')
     wr_rawwind = csv.writer(csvRawWind, dialect='excel',lineterminator='\n')
     csvRawWind.write("Time, Wind, Gust\n")
 
     #BMS csv file
-    csvBMS = open('BMS.csv','w')
+    csvBMS = open(outdir+'/BMS.csv','w')
     wr_bms = csv.writer(csvBMS, dialect='excel',lineterminator='\n')
     csvBMS.write("Time, SOC, SOH, Pack Volt, s1, s2, s3, s4 ,s5 ,s6, Difference, Temp.\n")
     
@@ -138,31 +141,32 @@ if __name__ == "__main__":
     for file in logsList:
         
         #deals with each log file
-        path=folderName+"\\"+file
-        f = open(path,'r')
-        contant = f.read().split("\n")
+        if not file == folderName:
+            path=folderName+"/"+file
+            f = open(path,'r')
+            contant = f.read().split("\n")
         
-        for line in contant:
-            #deals each line in log file
-            if "2: MobilicomGetSystemStatusResponse" in line:
-                csvline=reformRSSI(line)
-                rssi_wr.writerow(csvline)
-                csvcounter+=1
-            elif "Wind speed average" in line:
-                csvline=reformWind(line,"avg")
-                wr_avgwind.writerow(csvline)
-                csvcounter+=1
-            elif "Message arrived Meteorology [mastId" in line:
-                csvline=reformWind(line,"raw")
-                wr_rawwind.writerow(csvline)
-                csvcounter+=1
-            elif "ARM message arrived ArmMessage [bmsMessage=BMSPeriodicMessage" in line:
-                csvline=reformBMS(line)
-                wr_bms.writerow(csvline)
-                csvcounter+=1
-                
-        datacounter+=len(contant)
-        f.close()
+            for line in contant:
+                #deals each line in log file
+                if "2: MobilicomGetSystemStatusResponse" in line:
+                    csvline=reformRSSI(line)
+                    rssi_wr.writerow(csvline)
+                    csvcounter+=1
+                elif "Wind speed average" in line:
+                    csvline=reformWind(line,"avg")
+                    wr_avgwind.writerow(csvline)
+                    csvcounter+=1
+                elif "Message arrived Meteorology [mastId" in line:
+                    csvline=reformWind(line,"raw")
+                    wr_rawwind.writerow(csvline)
+                    csvcounter+=1
+                elif "ARM message arrived ArmMessage [bmsMessage=BMSPeriodicMessage" in line:
+                    csvline=reformBMS(line)
+                    wr_bms.writerow(csvline)
+                    csvcounter+=1
+                    
+            datacounter+=len(contant)
+            f.close()
 
     csvRSSI.close()    
     csvAvgWind.close()
@@ -187,11 +191,12 @@ if __name__ == "__main__":
           "------")
 
 
-    writer = pd.ExcelWriter('Graphs.xlsx')
-    for filename in glob.glob("*.csv"):
+    writer = pd.ExcelWriter(outdir+'/Graphs.xlsx')
+    for filename in glob.glob(outdir+'/*.csv'):
         df = pd.read_csv(filename)
-        dot=filename.index(".")
-        sheet_filename=filename[0:dot]
+        sheet_filename=filename.split("\\")[-1]
+        sheet_filename=sheet_filename.split(".")[0]
+        print(sheet_filename)
         df.to_excel(writer, sheet_name=sheet_filename)
         os.remove(filename)
     writer.save()
@@ -201,7 +206,7 @@ if __name__ == "__main__":
           "Please Wait!\n"+
           "------")
 
-    wb = load_workbook('Graphs.xlsx')
+    wb = load_workbook(outdir+'/Graphs.xlsx')
     wsBMS=wb["BMS"]
     wsMob=wb["Mobilicom"]
 
@@ -232,7 +237,7 @@ if __name__ == "__main__":
 
     
         
-    wb.save("Graphs.xlsx")
+    wb.save(outdir+'/Graphs.xlsx')
 
     dur=time.time()-startAll
     print( "ALL DONE!!!\n"+
