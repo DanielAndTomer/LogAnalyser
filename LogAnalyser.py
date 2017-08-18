@@ -2,20 +2,23 @@ import re
 import csv
 import os
 import time
-#import numpy as np
+##import numpy as np
 #import matplotlib.pyplot as plt
 #from matplotlib import rc
 import glob, xlwt
-import pandas as pd
+##import pandas as pd
 import xlsxwriter
 import tkinter
 from tkinter import filedialog
 import os
 import openpyxl
 from openpyxl import load_workbook
-#from openpyxl import formatting, styles
 from openpyxl.styles import PatternFill, Font
 from openpyxl.formatting.rule import ColorScaleRule, CellIsRule, FormulaRule
+##import plotly.plotly as py
+##import plotly.graph_objs as go
+##import plotly.figure_factory as FF
+
 
 #rc('mathtext', default='regular')
 
@@ -191,66 +194,83 @@ if __name__ == "__main__":
           "------")
 
 
-    writer = pd.ExcelWriter(outdir+'/Graphs.xlsx')
-    for filename in glob.glob(outdir+'/*.csv'):
-        df = pd.read_csv(filename)
-        sheet_filename=filename.split("\\")[-1]
-        sheet_filename=sheet_filename.split(".")[0]
-        print(sheet_filename)
-        df.to_excel(writer, sheet_name=sheet_filename)
-        os.remove(filename)
-    writer.save()
-
-    print("Graphs.xlsx has been created!\n"+
-          "Restyling the data sheets\n"+
-          "Please Wait!\n"+
-          "------")
-
-    wb = load_workbook(outdir+'/Graphs.xlsx')
-    wsBMS=wb["BMS"]
-    wsMob=wb["Mobilicom"]
-
-    green_fill = PatternFill(start_color='8BC34A', end_color='8BC34A', fill_type='solid')
-    orange_fill = PatternFill(start_color='FFC107', end_color='FFC107', fill_type='solid')
-    red_fill = PatternFill(start_color='F44336', end_color='F44336', fill_type='solid')
-    white_fill = PatternFill(start_color='ffffff', end_color='ffffff', fill_type='solid')
-    white_font = Font(bold=True, color='ffffff')
-    
-    bms_rules = [CellIsRule(operator='between', formula=['0','100'], stopIfTrue=True, fill=green_fill),
-                 CellIsRule(operator='between', formula=['100','200'], stopIfTrue=True, fill=orange_fill),
-                 CellIsRule(operator='greaterThan', formula=['100'], stopIfTrue=True, fill=red_fill, font=white_font)]
-
-    for rule in bms_rules:
-        wsBMS.conditional_formatting.add('L:L',rule)
-
-    rssi_rules = [CellIsRule(operator='between', formula=['-80','-90'], stopIfTrue=True, fill=orange_fill),
-                  CellIsRule(operator='lessThan', formula=['-90'], stopIfTrue=True, fill=red_fill, font=white_font)]
-
-    for rule in rssi_rules:
-        wsMob.conditional_formatting.add('C:D'.format(wsMob.max_row),rule)
-
-    cinr_rules = [CellIsRule(operator='between', formula=['6.1','7'], stopIfTrue=True, fill=orange_fill),
-                  CellIsRule(operator='lessThan', formula=['6.1','-2'], stopIfTrue=True, fill=red_fill, font=white_font)]
-
-    for rule in cinr_rules:
-        wsMob.conditional_formatting.add('E:F',rule)
+##    df = pd.read_csv(outdir+'/Mobilicom.csv')
+##
+##    sample_data_table = FF.create_table(df.head())
+##    py.iplot(sample_data_table, filename='Mobilicom_table')
 
     
-        
-    wb.save(outdir+'/Graphs.xlsx')
-
-    dur=time.time()-startAll
-    print( "ALL DONE!!!\n"+
-          "File name is:  Graphs.xlsx\n"+
-          "All the process took " + str(round(dur,2))+
-          "sec\n"
-          "------\n")
-   
-      
-    time.sleep(2)
-##    print("Starting to plot the data\n"
-##          "its going to take few seconds\n"
+##    trace = go.Scatter(x = df['Time'], y = df['RSSI 1'],
+##                      name='TOMER')
+##    layout = go.Layout(title='RSSI',
+##                       plot_bgcolor='rgb(230, 230,230)', 
+##                       showlegend=True)
+##    fig = go.Figure(data=[trace], layout=layout)
+##
+##    py.iplot(fig, filename='tomer')
+    
+##    writer = pd.ExcelWriter(outdir+'/Graphs.xlsx')
+##    for filename in glob.glob(outdir+'/*.csv'):
+##        df = pd.read_csv(filename)
+##        sheet_filename=filename.split("\\")[-1]
+##        sheet_filename=sheet_filename.split(".")[0]
+##        print(sheet_filename)
+##        df.to_excel(writer, sheet_name=sheet_filename)
+##        
+##        os.remove(filename)
+##    writer.save()
+##
+##    print("Graphs.xlsx has been created!\n"+
+##          "Restyling the data sheets\n"+
+##          "Please Wait!\n"+
+##          "------")
+##
+##
+##    wb = load_workbook(outdir+'/Graphs.xlsx')
+##    wsBMS=wb["BMS"]
+##    wsMob=wb["Mobilicom"]
+##
+##    green_fill = PatternFill(start_color='8BC34A', end_color='8BC34A', fill_type='solid')
+##    orange_fill = PatternFill(start_color='FFC107', end_color='FFC107', fill_type='solid')
+##    red_fill = PatternFill(start_color='F44336', end_color='F44336', fill_type='solid')
+##    white_fill = PatternFill(start_color='ffffff', end_color='ffffff', fill_type='solid')
+##    white_font = Font(bold=True, color='ffffff')
+##    
+##    bms_rules = [CellIsRule(operator='between', formula=['0','100'], stopIfTrue=True, fill=green_fill),
+##                 CellIsRule(operator='between', formula=['100','200'], stopIfTrue=True, fill=orange_fill),
+##                 CellIsRule(operator='greaterThan', formula=['100'], stopIfTrue=True, fill=red_fill, font=white_font)]
+##
+##    for rule in bms_rules:
+##        wsBMS.conditional_formatting.add('L:L',rule)
+##
+##    rssi_rules = [CellIsRule(operator='between', formula=['-80','-90'], stopIfTrue=True, fill=orange_fill),
+##                  CellIsRule(operator='lessThan', formula=['-90'], stopIfTrue=True, fill=red_fill, font=white_font)]
+##
+##    for rule in rssi_rules:
+##        wsMob.conditional_formatting.add('C:D'.format(wsMob.max_row),rule)
+##
+##    cinr_rules = [CellIsRule(operator='between', formula=['6.1','7'], stopIfTrue=True, fill=orange_fill),
+##                  CellIsRule(operator='lessThan', formula=['6.1','-2'], stopIfTrue=True, fill=red_fill, font=white_font)]
+##
+##    for rule in cinr_rules:
+##        wsMob.conditional_formatting.add('E:F',rule)
+##
+##    
+##        
+##    wb.save(outdir+'/Graphs.xlsx')
+##
+##    dur=time.time()-startAll
+##    print( "ALL DONE!!!\n"+
+##          "File name is:  Graphs.xlsx\n"+
+##          "All the process took " + str(round(dur,2))+
+##          "sec\n"
 ##          "------\n")
+##   
+##      
+##    time.sleep(2)
+####    print("Starting to plot the data\n"
+####          "its going to take few seconds\n"
+####          "------\n")
 
     
 
