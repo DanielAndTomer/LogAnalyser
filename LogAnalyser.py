@@ -6,11 +6,10 @@ import time
 #import matplotlib.pyplot as plt
 #from matplotlib import rc
 import glob, xlwt
-##import pandas as pd
-import xlsxwriter
+import pandas as pd
+##import xlsxwriter
 import tkinter
 from tkinter import filedialog
-import os
 import openpyxl
 from openpyxl import load_workbook
 from openpyxl.styles import PatternFill, Font
@@ -88,13 +87,15 @@ def reformBMS(s):
     l.append(temp)
     return l
 
-    
+ 
 
 if __name__ == "__main__":
 
-    print("Welcome!!!\n"
-          "-------")
-
+    print('\n'.join(['Welcome!!!',
+          '-------']))
+    
+##--------START ACTION: Browsing logs folder and setting output folders---------##
+    
     root = tkinter.Tk()
     root.withdraw() #use to hide tkinter window
     currdir = os.getcwd()
@@ -104,28 +105,32 @@ if __name__ == "__main__":
     
     folderName=logsdir
     logsList=os.listdir(folderName)
-    outdir = logsdir+"/LogAnalyser Output"
-    if not os.path.exists(outdir):
+    outdir = os.path.join(logsdir,"LogAnalyser Output")
+    csvdir=os.path.join(outdir,"CSV Data Files")
+    if not os.path.exists(csvdir):
         os.makedirs(outdir)
+    if not os.path.exists(csvdir):
+        os.makedirs(csvdir)
+    
     
     #Files creation:
     #RSSI/CINR csv file
-    csvRSSI = open(outdir+'/Mobilicom.csv','w')
+    csvRSSI = open(os.path.join(csvdir,"Mobilicom.csv"),'w')
     rssi_wr = csv.writer(csvRSSI, dialect='excel',lineterminator='\n')
     csvRSSI.write("Time, RSSI 1, RSSI 2, CINR 1, CINR 2, Up Time\n")
 
     #AvgWind csv file
-    csvAvgWind = open(outdir+'/Average Wind.csv','w')
+    csvAvgWind = open(os.path.join(csvdir,"Average Wind.csv"),'w')
     wr_avgwind = csv.writer(csvAvgWind, dialect='excel',lineterminator='\n')
     csvAvgWind.write("Time, Wind, Gust\n")
 
     #rawWind csv file
-    csvRawWind = open(outdir+'/Raw Wind.csv','w')
+    csvRawWind = open(os.path.join(csvdir,"Raw Wind.csv"),'w')
     wr_rawwind = csv.writer(csvRawWind, dialect='excel',lineterminator='\n')
     csvRawWind.write("Time, Wind, Gust\n")
 
     #BMS csv file
-    csvBMS = open(outdir+'/BMS.csv','w')
+    csvBMS = open(os.path.join(csvdir,"BMS.csv"),'w')
     wr_bms = csv.writer(csvBMS, dialect='excel',lineterminator='\n')
     csvBMS.write("Time, SOC, SOH, Pack Volt, s1, s2, s3, s4 ,s5 ,s6, Difference, Temp.\n")
     
@@ -140,12 +145,13 @@ if __name__ == "__main__":
     csvcounter=0
     datacounter=0
     startAll=time.time()
+
+##--------START ACTION: Getting data from log file and putting it in csvs---------##
     
     for file in logsList:
-        
+        path=os.path.join(folderName, file)
         #deals with each log file
-        if not file == folderName:
-            path=folderName+"/"+file
+        if os.path.isdir(path)==False:
             f = open(path,'r')
             contant = f.read().split("\n")
         
@@ -193,13 +199,12 @@ if __name__ == "__main__":
           "Please Wait!\n"
           "------")
 
-
 ##    df = pd.read_csv(outdir+'/Mobilicom.csv')
 ##
 ##    sample_data_table = FF.create_table(df.head())
 ##    py.iplot(sample_data_table, filename='Mobilicom_table')
-
-    
+##
+##    
 ##    trace = go.Scatter(x = df['Time'], y = df['RSSI 1'],
 ##                      name='TOMER')
 ##    layout = go.Layout(title='RSSI',
@@ -208,69 +213,72 @@ if __name__ == "__main__":
 ##    fig = go.Figure(data=[trace], layout=layout)
 ##
 ##    py.iplot(fig, filename='tomer')
+
+##--------START ACTION: Margging CSV Files into one Excel file---------##
     
-##    writer = pd.ExcelWriter(outdir+'/Graphs.xlsx')
-##    for filename in glob.glob(outdir+'/*.csv'):
-##        df = pd.read_csv(filename)
-##        sheet_filename=filename.split("\\")[-1]
-##        sheet_filename=sheet_filename.split(".")[0]
-##        print(sheet_filename)
-##        df.to_excel(writer, sheet_name=sheet_filename)
-##        
-##        os.remove(filename)
-##    writer.save()
-##
-##    print("Graphs.xlsx has been created!\n"+
-##          "Restyling the data sheets\n"+
-##          "Please Wait!\n"+
-##          "------")
-##
-##
-##    wb = load_workbook(outdir+'/Graphs.xlsx')
-##    wsBMS=wb["BMS"]
-##    wsMob=wb["Mobilicom"]
-##
-##    green_fill = PatternFill(start_color='8BC34A', end_color='8BC34A', fill_type='solid')
-##    orange_fill = PatternFill(start_color='FFC107', end_color='FFC107', fill_type='solid')
-##    red_fill = PatternFill(start_color='F44336', end_color='F44336', fill_type='solid')
-##    white_fill = PatternFill(start_color='ffffff', end_color='ffffff', fill_type='solid')
-##    white_font = Font(bold=True, color='ffffff')
-##    
-##    bms_rules = [CellIsRule(operator='between', formula=['0','100'], stopIfTrue=True, fill=green_fill),
-##                 CellIsRule(operator='between', formula=['100','200'], stopIfTrue=True, fill=orange_fill),
-##                 CellIsRule(operator='greaterThan', formula=['100'], stopIfTrue=True, fill=red_fill, font=white_font)]
-##
-##    for rule in bms_rules:
-##        wsBMS.conditional_formatting.add('L:L',rule)
-##
-##    rssi_rules = [CellIsRule(operator='between', formula=['-80','-90'], stopIfTrue=True, fill=orange_fill),
-##                  CellIsRule(operator='lessThan', formula=['-90'], stopIfTrue=True, fill=red_fill, font=white_font)]
-##
-##    for rule in rssi_rules:
-##        wsMob.conditional_formatting.add('C:D'.format(wsMob.max_row),rule)
-##
-##    cinr_rules = [CellIsRule(operator='between', formula=['6.1','7'], stopIfTrue=True, fill=orange_fill),
-##                  CellIsRule(operator='lessThan', formula=['6.1','-2'], stopIfTrue=True, fill=red_fill, font=white_font)]
-##
-##    for rule in cinr_rules:
-##        wsMob.conditional_formatting.add('E:F',rule)
-##
-##    
-##        
-##    wb.save(outdir+'/Graphs.xlsx')
-##
-##    dur=time.time()-startAll
-##    print( "ALL DONE!!!\n"+
-##          "File name is:  Graphs.xlsx\n"+
-##          "All the process took " + str(round(dur,2))+
-##          "sec\n"
+    writer = pd.ExcelWriter(os.path.join(outdir, 'Graphs.xlsx'))
+    for filename in os.listdir(csvdir):
+        if filename.split('.')[-1]=='csv':
+            csvfile=os.path.join(csvdir, filename)
+            df = pd.read_csv(csvfile)
+            sheet_filename=filename.split("\\")[-1]
+            sheet_filename=sheet_filename.split(".")[0]
+            print(sheet_filename)
+            df.to_excel(writer, sheet_name=sheet_filename)
+                     
+    writer.save()
+
+    print("Graphs.xlsx has been created!\n"+
+          "Restyling the data sheets\n"+
+          "Please Wait!\n"+
+          "------")
+
+
+    wb = load_workbook(outdir+'/Graphs.xlsx')
+    wsBMS=wb["BMS"]
+    wsMob=wb["Mobilicom"]
+
+    green_fill = PatternFill(start_color='8BC34A', end_color='8BC34A', fill_type='solid')
+    orange_fill = PatternFill(start_color='FFC107', end_color='FFC107', fill_type='solid')
+    red_fill = PatternFill(start_color='F44336', end_color='F44336', fill_type='solid')
+    white_fill = PatternFill(start_color='ffffff', end_color='ffffff', fill_type='solid')
+    white_font = Font(bold=True, color='ffffff')
+    
+    bms_rules = [CellIsRule(operator='between', formula=['0','100'], stopIfTrue=True, fill=green_fill),
+                 CellIsRule(operator='between', formula=['100','200'], stopIfTrue=True, fill=orange_fill),
+                 CellIsRule(operator='greaterThan', formula=['100'], stopIfTrue=True, fill=red_fill, font=white_font)]
+
+    for rule in bms_rules:
+        wsBMS.conditional_formatting.add('L:L',rule)
+
+    rssi_rules = [CellIsRule(operator='between', formula=['-80','-90'], stopIfTrue=True, fill=orange_fill),
+                  CellIsRule(operator='lessThan', formula=['-90'], stopIfTrue=True, fill=red_fill, font=white_font)]
+
+    for rule in rssi_rules:
+        wsMob.conditional_formatting.add('C:D'.format(wsMob.max_row),rule)
+
+    cinr_rules = [CellIsRule(operator='between', formula=['6.1','7'], stopIfTrue=True, fill=orange_fill),
+                  CellIsRule(operator='lessThan', formula=['6.1','-2'], stopIfTrue=True, fill=red_fill, font=white_font)]
+
+    for rule in cinr_rules:
+        wsMob.conditional_formatting.add('E:F',rule)
+
+    
+        
+    wb.save(outdir+'/Graphs.xlsx')
+
+    dur=time.time()-startAll
+    print( "ALL DONE!!!\n"+
+          "File name is:  Graphs.xlsx\n"+
+          " All the process took " + str(round(dur,2))+
+          "sec\n"
+          "------\n")
+   
+      
+    time.sleep(2)
+##    print("Starting to plot the data\n"
+##          "its going to take few seconds\n"
 ##          "------\n")
-##   
-##      
-##    time.sleep(2)
-####    print("Starting to plot the data\n"
-####          "its going to take few seconds\n"
-####          "------\n")
 
     
 
