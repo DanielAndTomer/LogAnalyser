@@ -2,22 +2,13 @@ import re
 import csv
 import os
 import time
-##import numpy as np
-#import matplotlib.pyplot as plt
-#from matplotlib import rc
-import glob, xlwt
 import pandas as pd
-##import xlsxwriter
 import tkinter
 from tkinter import filedialog
 import openpyxl
 from openpyxl import load_workbook
 from openpyxl.styles import PatternFill, Font
 from openpyxl.formatting.rule import ColorScaleRule, CellIsRule, FormulaRule
-##import plotly.plotly as py
-##import plotly.graph_objs as go
-##import plotly.figure_factory as FF
-
 
 #rc('mathtext', default='regular')
 
