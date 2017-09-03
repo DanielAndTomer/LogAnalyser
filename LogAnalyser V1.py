@@ -1,7 +1,4 @@
-import re
-import csv
-import os
-import time
+import re, csv, os, time
 import pandas as pd
 import tkinter
 from tkinter import filedialog
@@ -33,6 +30,12 @@ def clear_between( s, first, last ):
         print ("[ERROR]: Sub string didn't found")
         pass
 
+def reformStep(s):
+    s=clear_between(s,"[DEBUG] "," ")
+    time=find_between(s,"",",")
+    step=find_between(s,"Start command "," ")
+    l=[time,step]
+    return l
 
 def reformRSSI(s):
     s=clear_between(s,"[DEBUG] "," ")
@@ -79,6 +82,14 @@ def reformBMS(s):
     l.append(temp)
     return l
 
+def reformeDSTemp(s):
+    date_time=find_between(s,"] "," [")
+    date=date_time[0:10]
+    time=date_time[10:-1]
+    sensor=find_between(s,"p [","]")
+    temp=clear_between(s,"[INFO"," ] : ")
+    l=[date,time,sensor,temp]
+    return l
  
 
 if __name__ == "__main__":
@@ -106,25 +117,35 @@ if __name__ == "__main__":
     
     
     #Files creation:
+    #Start command csv file
+    csvStep = open(os.path.join(csvdir,"Step.csv"),'w')
+    step_wr = csv.writer(csvStep, dialect='excel',lineterminator='\n')
+    csvStep.write("Time, Step\n")
+        
     #RSSI/CINR csv file
     csvRSSI = open(os.path.join(csvdir,"Mobilicom.csv"),'w')
     rssi_wr = csv.writer(csvRSSI, dialect='excel',lineterminator='\n')
-    csvRSSI.write("Time, RSSI 1, RSSI 2, CINR 1, CINR 2, Up Time\n")
+    csvRSSI.write("Time, RSSI 1, RSSI 2, CINR 1, CINR 2, Up Time, Step\n")
 
     #AvgWind csv file
     csvAvgWind = open(os.path.join(csvdir,"Average Wind.csv"),'w')
     wr_avgwind = csv.writer(csvAvgWind, dialect='excel',lineterminator='\n')
-    csvAvgWind.write("Time, Wind, Gust\n")
+    csvAvgWind.write("Time, Wind, Gust, Step\n")
 
     #rawWind csv file
     csvRawWind = open(os.path.join(csvdir,"Raw Wind.csv"),'w')
     wr_rawwind = csv.writer(csvRawWind, dialect='excel',lineterminator='\n')
-    csvRawWind.write("Time, Wind, Gust\n")
+    csvRawWind.write("Time, Wind, Gust, Step\n")
 
     #BMS csv file
     csvBMS = open(os.path.join(csvdir,"BMS.csv"),'w')
     wr_bms = csv.writer(csvBMS, dialect='excel',lineterminator='\n')
-    csvBMS.write("Time, SOC, SOH, Pack Volt, s1, s2, s3, s4 ,s5 ,s6, Difference, Temp.\n")
+    csvBMS.write("Time, SOC, SOH, Pack Volt, s1, s2, s3, s4 ,s5 ,s6, Difference, Temp., Step\n")
+
+    #DStemp csv file
+    csvDStemp = open(os.path.join(csvdir,"DS Temp.csv"),'w')
+    wr_ds = csv.writer(csvDStemp, dialect='excel',lineterminator='\n')
+    csvDStemp.write("Date, Time, Sensor, Temp\n")
     
     print("------\n"+
         "In progress !\n"+
@@ -146,33 +167,52 @@ if __name__ == "__main__":
         if os.path.isdir(path)==False:
             f = open(path,'r')
             contant = f.read().split("\n")
-        
+            step=[]
+            flag=False
             for line in contant:
                 #deals each line in log file
+                rssicsvline=[]
                 if "2: MobilicomGetSystemStatusResponse" in line:
-                    csvline=reformRSSI(line)
-                    rssi_wr.writerow(csvline)
+                    rssicsvline=reformRSSI(line)
+                    if flag:    
+                        rssicsvline.append('>>'.join(step))
+                        flag=False               
+                    rssi_wr.writerow(rssicsvline)
                     csvcounter+=1
                 elif "Wind speed average" in line:
-                    csvline=reformWind(line,"avg")
+                    csvline=reformWind(line,"avg")  
                     wr_avgwind.writerow(csvline)
                     csvcounter+=1
                 elif "Message arrived Meteorology [mastId" in line:
-                    csvline=reformWind(line,"raw")
+                    csvline=reformWind(line,"raw")  
                     wr_rawwind.writerow(csvline)
                     csvcounter+=1
                 elif "ARM message arrived ArmMessage [bmsMessage=BMSPeriodicMessage" in line:
                     csvline=reformBMS(line)
                     wr_bms.writerow(csvline)
                     csvcounter+=1
+                elif "Start command" in line:
+                    if not flag:
+                        step=[]
+                    step.append(reformStep(line)[1])
+                    flag=True
+                    step_wr.writerow(reformStep(line))
+                    csvcounter+=1
+                elif "updateAIlandingTempVariables()" in line:
+                    csvline=reformeDSTemp(line)
+                    wr_ds.writerow(csvline)
+                    csvcounter+=1
+                
                     
             datacounter+=len(contant)
             f.close()
 
+    csvStep.close()
     csvRSSI.close()    
     csvAvgWind.close()
     csvRawWind.close()
     csvBMS.close()
+    csvDStemp.close()
 
     dur=time.time()-startAll
     print("------\n"+
@@ -190,22 +230,7 @@ if __name__ == "__main__":
           "Marging CSV files into on Excel Workbook\n"
           "Please Wait!\n"
           "------")
-
-##    df = pd.read_csv(outdir+'/Mobilicom.csv')
-##
-##    sample_data_table = FF.create_table(df.head())
-##    py.iplot(sample_data_table, filename='Mobilicom_table')
-##
-##    
-##    trace = go.Scatter(x = df['Time'], y = df['RSSI 1'],
-##                      name='TOMER')
-##    layout = go.Layout(title='RSSI',
-##                       plot_bgcolor='rgb(230, 230,230)', 
-##                       showlegend=True)
-##    fig = go.Figure(data=[trace], layout=layout)
-##
-##    py.iplot(fig, filename='tomer')
-
+    
 ##--------START ACTION: Margging CSV Files into one Excel file---------##
     
     writer = pd.ExcelWriter(os.path.join(outdir, 'Graphs.xlsx'))
@@ -244,16 +269,19 @@ if __name__ == "__main__":
         wsBMS.conditional_formatting.add('L:L',rule)
 
     rssi_rules = [CellIsRule(operator='between', formula=['-80','-90'], stopIfTrue=True, fill=orange_fill),
-                  CellIsRule(operator='lessThan', formula=['-90'], stopIfTrue=True, fill=red_fill, font=white_font)]
+                  CellIsRule(operator='lessThan', formula=['-90'], stopIfTrue=True, fill=red_fill, font=white_font),
+                  CellIsRule(operator='equal', formula=[''], stopIfTrue=True, fill=white_fill)]
 
     for rule in rssi_rules:
-        wsMob.conditional_formatting.add('C:D'.format(wsMob.max_row),rule)
+        wsMob.conditional_formatting.add('C:D',rule)
 
     cinr_rules = [CellIsRule(operator='between', formula=['6.1','7'], stopIfTrue=True, fill=orange_fill),
-                  CellIsRule(operator='lessThan', formula=['6.1','-2'], stopIfTrue=True, fill=red_fill, font=white_font)]
+                  CellIsRule(operator='lessThan', formula=['6.1','-2'], stopIfTrue=True, fill=red_fill, font=white_font),
+                  CellIsRule(operator='equal', formula=[''], stopIfTrue=True, fill=white_fill)]
 
     for rule in cinr_rules:
-        wsMob.conditional_formatting.add('E:F',rule)
+        wsMob.conditional_formatting.add('E:E',rule)
+        wsMob.conditional_formatting.add('F:F',rule)
 
     
         
@@ -262,7 +290,7 @@ if __name__ == "__main__":
     dur=time.time()-startAll
     print( "ALL DONE!!!\n"+
           "File name is:  Graphs.xlsx\n"+
-          " All the process took " + str(round(dur,2))+
+          "All the process took " + str(round(dur,2))+
           "sec\n"
           "------\n")
    
