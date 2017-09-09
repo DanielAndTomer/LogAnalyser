@@ -18,6 +18,7 @@ def grabFile():
 
 ftp =  FTP_TLS( 'logs.autodrones4biz.com' )
 ftp.login( 'airouser' , 'Thru6102Pxj')
+ftp.prot_p()
 ftp.cwd('/airobotics/qa8/ds/01/ds_server/logs')
 
 
