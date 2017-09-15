@@ -11,13 +11,9 @@ def grabFile():
     ftp.quit()
     localfile.close()
 
-##ftp = FTP('logs.autodrones4biz.com')
-##ftp.login(user='airouser', passwd = 'Thru6102Pxj')
-##
-##ftp.cwd('/airobotics/qa8/ds/01/ds_server/logs')
 
 ftp =  FTP_TLS( 'logs.autodrones4biz.com' )
-ftp.login( 'airouser' , 'Thru6102Pxj')
+ftp.login( 'airouser' , '####')
 ftp.prot_p()
 ftp.cwd('/airobotics/qa8/ds/01/ds_server/logs')
 
